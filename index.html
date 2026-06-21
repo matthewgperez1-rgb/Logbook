@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+<title>The Logbook</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#ece2cf" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Logbook" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+<style>
+  :root{
+    --paper:#ece2cf;          /* warm paper field */
+    --card:#f7f1e4;           /* lifted page */
+    --card2:#fbf6ec;          /* inset */
+    --ink:#352a1f;            /* warm dark ink */
+    --ink-soft:#5c5043;
+    --dim:#8f8270;
+    --line:rgba(53,42,31,0.10);
+    --line2:rgba(53,42,31,0.18);
+    --honey:#c2832f;          /* primary warm accent */
+    --honey-d:#a06c23;
+    --sage:#6f8a59;           /* affirmation */
+    --sage-bg:rgba(111,138,89,0.13);
+    --clay:#b15a37;           /* the hard stuff, used sparingly */
+    --clay-bg:rgba(177,90,55,0.10);
+    --serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);min-height:100vh;
+    background-image:radial-gradient(rgba(53,42,31,0.018) 1px,transparent 1px);background-size:4px 4px;}
+  .wrap{max-width:480px;margin:0 auto;padding:26px 18px 80px;}
+
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--honey-d);font-weight:600;margin-bottom:6px;}
+  h1{font-family:var(--serif);font-weight:600;font-size:30px;margin:0 0 1px;line-height:1.12;letter-spacing:-.01em;}
+  .subdate{font-size:13px;color:var(--dim);margin-bottom:20px;}
+
+  /* tabs as a soft segmented row */
+  .tabs{display:flex;gap:5px;margin-bottom:22px;}
+  .tab{flex:1;text-align:center;padding:9px 0;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--ink-soft);
+    cursor:pointer;background:transparent;border:none;border-radius:9px;transition:background .18s,color .18s;}
+  .tab.active{background:var(--ink);color:var(--card);}
+  .panel{display:none;animation:fade .25s ease;}
+  .panel.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  .sec{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);font-weight:600;margin:26px 2px 11px;display:flex;align-items:center;gap:8px;}
+  .sec:first-child{margin-top:0;}
+  .sec .who{color:var(--ink);}
+  .sec .age{color:var(--dim);font-weight:500;letter-spacing:.04em;text-transform:none;font-size:12px;}
+  .sec::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  /* day streak chip */
+  .streak{display:inline-flex;align-items:baseline;gap:7px;margin-bottom:20px;padding:8px 14px;
+    background:var(--card);border:1px solid var(--line);border-radius:999px;box-shadow:0 1px 0 rgba(255,255,255,.6) inset;}
+  .streak .num{font-family:var(--serif);font-size:18px;color:var(--honey-d);font-weight:600;}
+  .streak .label{font-size:12.5px;color:var(--ink-soft);}
+
+  /* check items */
+  .item{display:flex;gap:13px;align-items:flex-start;padding:14px 14px;border:1px solid var(--line);
+    border-radius:13px;margin-bottom:9px;cursor:pointer;background:var(--card);
+    box-shadow:0 1px 2px rgba(53,42,31,0.04);transition:border-color .15s,background .15s,transform .06s;}
+  .item:active{transform:scale(.994);}
+  .item.checked{border-color:rgba(111,138,89,.5);background:var(--sage-bg);}
+  .box{width:23px;height:23px;flex-shrink:0;border:1.5px solid var(--line2);border-radius:7px;margin-top:1px;
+    display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--sage);transition:all .15s;}
+  .item.checked .box{border-color:var(--sage);background:var(--sage);color:var(--card2);}
+  .it .t{font-size:15px;line-height:1.32;font-weight:500;}
+  .it .s{font-size:12.5px;color:var(--dim);margin-top:3px;line-height:1.4;}
+
+  /* the catch-yourself card */
+  .critic{background:var(--card);border:1px solid var(--line2);border-radius:16px;padding:17px 16px;margin-bottom:22px;
+    box-shadow:0 2px 8px rgba(53,42,31,0.05);}
+  .critic h3{margin:0 0 4px;font-family:var(--serif);font-size:19px;font-weight:600;}
+  .critic .lead{margin:0 0 13px;font-size:13px;color:var(--ink-soft);line-height:1.45;}
+  .critic .open-btn{width:100%;padding:13px;background:var(--clay);color:#fff;border:none;border-radius:11px;
+    font-weight:600;font-size:14.5px;cursor:pointer;letter-spacing:.01em;box-shadow:0 2px 6px rgba(177,90,55,.28);}
+  .critic .open-btn:active{background:#9c4c2d;}
+  .critic .count{font-size:12px;color:var(--clay);text-align:center;margin-top:10px;line-height:1.4;}
+  .unrepaired{margin-top:12px;background:var(--clay-bg);border:1px solid rgba(177,90,55,.3);border-radius:11px;padding:12px;}
+  .unrepaired .uh{font-size:12.5px;color:var(--clay);font-weight:600;margin-bottom:8px;}
+  .urow{display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid var(--line);}
+  .urow:first-of-type{border-top:none;}
+  .urow .ut{flex:1;font-size:13px;line-height:1.35;}
+  .urow .ut .uw{color:var(--dim);font-size:11.5px;}
+  .urow .ufix{flex-shrink:0;padding:7px 12px;background:var(--sage);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;}
+
+  /* inline feeling flow */
+  .flow{margin-top:4px;display:none;}
+  .flow.show{display:block;animation:fade .22s ease;}
+  .flow .stepq{font-family:var(--serif);font-size:16px;line-height:1.32;margin:14px 0 4px;}
+  .flow .stepsub{font-size:12.5px;color:var(--dim);margin-bottom:11px;line-height:1.4;}
+  .ice-tip{text-align:center;font-size:12.5px;color:var(--clay);background:var(--clay-bg);border:1px solid rgba(177,90,55,.25);
+    border-radius:10px;padding:9px;margin-bottom:4px;}
+  .ice-tip b{font-weight:600;}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
+  .pill{padding:9px 13px;border:1px solid var(--line2);border-radius:999px;background:var(--card2);
+    font-size:13px;color:var(--ink);cursor:pointer;line-height:1.1;transition:all .14s;}
+  .pill:active{transform:scale(.96);}
+  .pill.sel{background:var(--ink);color:var(--card);border-color:var(--ink);}
+  .who-row{display:flex;gap:8px;margin-bottom:4px;}
+  .who-row .pill{flex:1;text-align:center;}
+  textarea.inl{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:11px;color:var(--ink);
+    font-family:var(--sans);font-size:14px;padding:12px;min-height:54px;resize:vertical;margin-top:6px;}
+  textarea.inl::placeholder{color:var(--dim);}
+  .flow-actions{display:flex;gap:9px;margin-top:13px;}
+  .flow-actions button{flex:1;padding:12px;border-radius:11px;font-weight:600;font-size:14px;cursor:pointer;border:none;}
+  .btn-ghost{background:transparent;border:1px solid var(--line2)!important;color:var(--ink-soft);}
+  .btn-solid{background:var(--ink);color:var(--card);}
+
+  textarea.note{width:100%;background:var(--card);border:1px solid var(--line);border-radius:13px;color:var(--ink);
+    font-family:var(--sans);font-size:14.5px;padding:13px;min-height:56px;resize:vertical;margin-bottom:14px;
+    box-shadow:0 1px 2px rgba(53,42,31,0.04);}
+  textarea.note::placeholder{color:var(--dim);}
+
+  .present-row{display:flex;gap:7px;margin-bottom:14px;}
+  .present-row .pbtn{flex:1;padding:13px 4px;border:1px solid var(--line2);border-radius:12px;background:var(--card);
+    font-size:13px;font-weight:500;color:var(--ink-soft);cursor:pointer;text-align:center;line-height:1.2;transition:all .14s;}
+  .present-row .pbtn:active{transform:scale(.97);}
+  .present-row .pbtn.sel{background:var(--ink);color:var(--card);border-color:var(--ink);}
+
+  button.save{width:100%;padding:15px;background:var(--honey);color:#fff;border:none;border-radius:13px;
+    font-size:15.5px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(194,131,47,.3);letter-spacing:.01em;}
+  button.save:active{background:var(--honey-d);}
+  .status{text-align:center;font-size:12.5px;color:var(--sage);margin-top:11px;min-height:16px;font-weight:600;}
+
+  /* catch list */
+  .catch-add{background:var(--card);border:1px solid var(--line2);border-radius:15px;padding:14px;margin-bottom:18px;
+    box-shadow:0 2px 8px rgba(53,42,31,0.05);}
+  .catch-add textarea{width:100%;background:transparent;border:none;color:var(--ink);font-family:var(--sans);
+    font-size:15px;resize:none;min-height:44px;padding:0;margin-bottom:11px;}
+  .catch-add textarea::placeholder{color:var(--dim);}
+  .catch-add textarea:focus{outline:none;}
+  .catch-row{display:flex;gap:8px;align-items:center;}
+  .src{display:flex;flex:1;background:var(--card2);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  .src button{flex:1;padding:9px 4px;font-size:12.5px;font-weight:500;background:transparent;color:var(--dim);border:none;cursor:pointer;}
+  .src button.active{background:var(--honey);color:#fff;font-weight:600;}
+  .addBtn{padding:11px 16px;background:var(--ink);color:var(--card);border:none;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;}
+  .addBtn:disabled{opacity:.55;}
+  .catch-status{font-size:12.5px;margin-top:9px;min-height:16px;font-weight:600;text-align:center;}
+  .catch-status.ok{color:var(--sage);}
+  .catch-status.err{color:var(--clay);}
+  .cstats{display:flex;gap:16px;font-size:12.5px;color:var(--dim);margin-bottom:13px;padding:0 2px;}
+  .cstats b{color:var(--honey-d);font-weight:700;}
+  .citem{display:flex;gap:11px;align-items:flex-start;padding:13px;border:1px solid var(--line);border-radius:13px;
+    margin-bottom:8px;background:var(--card);box-shadow:0 1px 2px rgba(53,42,31,0.04);}
+  .citem .ctext{flex:1;font-size:14.5px;line-height:1.38;}
+  .citem .ctag{font-size:11px;color:var(--dim);margin-top:4px;letter-spacing:.02em;}
+  .citem .cdone{flex-shrink:0;width:27px;height:27px;border-radius:8px;border:1.5px solid var(--line2);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sage);font-size:14px;background:var(--card2);}
+  .citem.done{opacity:.55;}
+  .citem.done .ctext{text-decoration:line-through;}
+  .citem.done .cdone{background:var(--sage);border-color:var(--sage);color:#fff;}
+  .closedToggle{font-size:12px;color:var(--dim);text-align:center;padding:11px 0;cursor:pointer;letter-spacing:.04em;font-weight:500;}
+  .empty{color:var(--dim);font-size:13px;padding:16px 6px;text-align:center;line-height:1.5;}
+
+  /* trends */
+  .trend-card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px;margin-bottom:11px;box-shadow:0 1px 2px rgba(53,42,31,0.04);}
+  .trend-card .th{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px;}
+  .trend-card .tname{font-size:14.5px;font-weight:600;}
+  .trend-card .tdelta{font-size:12.5px;font-weight:600;}
+  .up{color:var(--sage);} .down{color:var(--clay);} .flat{color:var(--dim);}
+  .spark{display:flex;align-items:flex-end;gap:3px;height:42px;}
+  .spark .bar{flex:1;background:var(--honey);border-radius:3px 3px 0 0;min-height:3px;opacity:.9;}
+  .spark .bar.crit{background:var(--clay);}
+  .alert{background:var(--clay-bg);border:1px solid rgba(177,90,55,.32);border-radius:14px;padding:15px;margin-bottom:13px;font-size:13.5px;line-height:1.55;}
+  .alert b{color:var(--clay);}
+  .good{background:var(--sage-bg);border:1px solid rgba(111,138,89,.35);border-radius:14px;padding:15px;margin-bottom:13px;font-size:13.5px;line-height:1.55;}
+  .good b{color:var(--sage);}
+  .mini{font-size:12.5px;color:var(--dim);line-height:1.6;margin-top:20px;padding-top:15px;border-top:1px solid var(--line);}
+
+  /* review */
+  .rev-step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:13px;box-shadow:0 1px 3px rgba(53,42,31,0.05);}
+  .rev-step .rnum{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--honey-d);font-weight:600;margin-bottom:8px;}
+  .rev-step .rq{font-family:var(--serif);font-size:18px;line-height:1.3;margin-bottom:10px;}
+  .rev-step .rdata{font-size:13.5px;color:var(--ink-soft);line-height:1.6;margin-bottom:12px;}
+  .rev-step .rdata b{color:var(--ink);font-weight:600;}
+  .rev-step textarea{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:11px;color:var(--ink);
+    font-family:var(--sans);font-size:14px;padding:11px;min-height:62px;resize:vertical;}
+  .rev-step textarea::placeholder{color:var(--dim);}
+
+  .settings-block{margin-top:28px;padding-top:18px;border-top:1px solid var(--line);}
+  .settings-toggle{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:600;cursor:pointer;text-align:center;padding:6px;}
+  .settings-body{margin-top:14px;}
+  .set-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  .set-label{font-size:14px;font-weight:600;color:var(--ink);}
+  .set-ctl{display:flex;gap:7px;align-items:center;}
+  .set-ctl input[type=time]{background:var(--card);border:1px solid var(--line2);border-radius:9px;padding:8px 10px;font-size:14px;color:var(--ink);font-family:var(--sans);}
+  .set-btn{padding:9px 13px;background:var(--card);border:1px solid var(--line2);border-radius:9px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;}
+  .set-btn:active{background:var(--card2);}
+  .set-btn.on{background:var(--sage);color:#fff;border-color:var(--sage);}
+  .set-note{font-size:12px;color:var(--dim);line-height:1.5;margin:4px 0 16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">The Logbook</div>
+  <h1 id="hTitle">Today</h1>
+  <div class="subdate" id="hDate"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="today">Today</button>
+    <button class="tab" data-tab="catch">Gipsy</button>
+    <button class="tab" data-tab="trends">Trends</button>
+    <button class="tab" data-tab="review">Review</button>
+  </div>
+
+  <!-- TODAY -->
+  <div class="panel active" id="p-today">
+    <div class="streak"><span class="num" id="streakNum">0</span><span class="label">days in a row</span></div>
+
+    <div class="critic">
+      <h3>Catch yourself</h3>
+      <p class="lead">The moment you snap or get critical — stop and name what's really going on. Anger is the tip. The real feeling is underneath.</p>
+      <button class="open-btn" id="criticOpen">Something just happened</button>
+      <div class="count" id="criticCount"></div>
+      <div id="unrepairedZone"></div>
+
+      <div class="flow" id="criticFlow">
+        <div class="ice-tip">You felt <b>angry</b>. That's the tip of the iceberg. What's under it?</div>
+        <div class="stepq">The real feeling</div>
+        <div class="stepsub">Pick the one closest to true. This is the whole point.</div>
+        <div class="pills" id="feelPills"></div>
+
+        <div class="stepq">Who did it land on?</div>
+        <div class="who-row" id="whoPills"></div>
+
+        <div class="stepq">What happened?</div>
+        <textarea class="inl" id="criticWhat" placeholder="Briefly — what set it off, what you said or did."></textarea>
+
+        <div class="stepq">Did you repair it yet?</div>
+        <div class="stepsub">The snap isn't what does the damage — the unrepaired snap is. A repair can be small: "I was short with you. That wasn't about you."</div>
+        <div class="who-row" id="repairPills"></div>
+
+        <div class="flow-actions">
+          <button class="btn-ghost" id="criticCancel">Cancel</button>
+          <button class="btn-solid" id="criticSave">Log it</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">With <span class="who">Gipsy</span></div>
+    <div id="list-gipsy"></div>
+
+    <div class="sec">With <span class="who">Nicholas</span> <span class="age">11</span></div>
+    <div id="list-nico"></div>
+
+    <div class="sec">With <span class="who">Rosalia</span> <span class="age">7</span></div>
+    <div id="list-rose"></div>
+
+    <div class="sec">The honest line</div>
+    <textarea class="note" id="slideNote" placeholder="What did I let slide today? Where was I passive?"></textarea>
+
+    <div class="sec">How present was I, honestly?</div>
+    <div class="present-row" id="presentRow"></div>
+
+    <div class="sec">One thing I did right</div>
+    <textarea class="note" id="proudNote" placeholder="Not the gaps — the thing you're glad you did. Even a small one counts."></textarea>
+
+    <button class="save" id="saveBtn">Save today</button>
+    <div class="status" id="statusMsg"></div>
+
+    <div class="settings-block">
+      <div class="settings-toggle" id="setToggle">Settings & backup ▾</div>
+      <div class="settings-body" id="setBody" style="display:none;">
+        <div class="set-row">
+          <div class="set-label">Daily reminder</div>
+          <div class="set-ctl">
+            <input type="time" id="remTime" value="20:00" />
+            <button class="set-btn" id="remEnable">Turn on</button>
+          </div>
+        </div>
+        <div class="set-note" id="remNote">A nudge to log before bed. Works best with the app open or recently used — see the note your setup gave you for a guaranteed reminder.</div>
+        <div class="set-row">
+          <div class="set-label">Your data</div>
+          <div class="set-ctl">
+            <button class="set-btn" id="exportBtn">Export</button>
+            <button class="set-btn" id="importBtn">Import</button>
+            <input type="file" id="importFile" accept="application/json" style="display:none;" />
+          </div>
+        </div>
+        <div class="set-note">Export saves everything to a file you keep. Import restores it. Your history is never trapped.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GIPSY / CATCH -->
+  <div class="panel" id="p-catch">
+    <div class="catch-add">
+      <textarea id="catchText" placeholder="What did Gipsy say? Or what did you notice she needs?"></textarea>
+      <div class="catch-row">
+        <div class="src">
+          <button id="srcTold" class="active" data-src="told">She said it</button>
+          <button id="srcNoticed" data-src="noticed">I noticed it</button>
+        </div>
+        <button class="addBtn" id="addCatchBtn">Catch it</button>
+      </div>
+      <div class="catch-status" id="catchStatus"></div>
+    </div>
+    <div class="cstats" id="cstats"></div>
+    <div class="sec">Open — handle these</div>
+    <div id="openList"></div>
+    <div class="closedToggle" id="closedToggle">Show closed ▾</div>
+    <div id="closedList" style="display:none;"></div>
+  </div>
+
+  <!-- TRENDS -->
+  <div class="panel" id="p-trends">
+    <div id="alertZone"></div>
+    <div class="sec">Last 14 days · direction of travel</div>
+    <div id="trendCards"></div>
+    <div class="mini">Each chart compares your most recent 7 days against the 7 before. The point isn't a perfect score — it's catching a slide early, while it's still a number and not yet something your family feels.</div>
+  </div>
+
+  <!-- REVIEW -->
+  <div class="panel" id="p-review"><div id="reviewBody"></div></div>
+</div>
+
+<script>
+/* ---------- STORAGE: localStorage-backed, reliable in a real browser/PWA ---------- */
+(function(){
+  const P='logbook:';
+  window.storage={
+    get:async(k)=>{const v=localStorage.getItem(P+k);if(v===null)throw new Error('not found');return {key:k,value:v};},
+    set:async(k,v)=>{localStorage.setItem(P+k,v);return {key:k,value:v};},
+    delete:async(k)=>{localStorage.removeItem(P+k);return {key:k,deleted:true};},
+    list:async(pre)=>{const keys=[];for(let i=0;i<localStorage.length;i++){const full=localStorage.key(i);if(full&&full.startsWith(P)){const k=full.slice(P.length);if(!pre||k.startsWith(pre))keys.push(k);}}return {keys};}
+  };
+})();
+
+/* ---------- CONFIG ---------- */
+const ITEMS={
+  gipsy:[
+    {key:'g_initiative',t:'Took initiative at home, unprompted',s:'Saw it, did it. No waiting to be told.',metric:'initiative'},
+    {key:'g_bid',t:'Turned toward a bid from Gipsy',s:'She reached out — you actually engaged.',metric:'warmth'},
+    {key:'g_closed',t:'Closed something off her Catch List',s:'Caught it, owned it, finished it.',metric:'initiative'},
+    {key:'g_influence',t:'Let her input change a decision',s:'Even small. You went with her view.',metric:'warmth'},
+    {key:'g_appreciate',t:'Named something specific I appreciate',s:'Not "thanks for everything." Something real.',metric:'warmth'},
+  ],
+  nico:[
+    {key:'n_special',t:'Special Time with Nicholas',s:'10+ min, his lead — baseball, a block session, his pick.',metric:'special'},
+    {key:'n_warm',t:'Was warm, not just present',s:'Encouraging — coach, not critic.',metric:'warmth'},
+    {key:'n_coach',t:'Coached an emotion instead of dismissing it',s:'He got upset; you connected before correcting.',metric:'coach'},
+  ],
+  rose:[
+    {key:'r_special',t:'Special Time with Rosalia',s:'10+ min, her lead. Her thing, no multitasking.',metric:'special'},
+    {key:'r_warm',t:'Was warm, not just present',s:'Affection, playfulness, patience.',metric:'warmth'},
+    {key:'r_coach',t:'Coached an emotion instead of dismissing it',s:'Met the meltdown with connection, not "stop crying."',metric:'coach'},
+  ],
+};
+const ALL=[...ITEMS.gipsy,...ITEMS.nico,...ITEMS.rose];
+
+/* anger iceberg — the feelings under the anger */
+const FEELINGS=['Disrespected / unheard','Ignored / dismissed','Overwhelmed','Anxious / afraid','Hurt / let down','Not enough / inadequate','Ashamed','Disappointed','Powerless','Disconnected / alone','Exhausted','Threatened / jealous'];
+const WHO=['Nicholas','Rosalia','Both','Gipsy'];
+const REPAIR=['Yes, already','Not yet','N/A'];
+const PRESENT=['Checked out','Half there','Fully present'];
+
+/* ---------- UTILS ---------- */
+function todayStr(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
+function fmtHeader(d=new Date()){return d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});}
+function fmtShort(s){const d=new Date(s+'T00:00:00');return d.toLocaleDateString(undefined,{weekday:'short'})+' '+d.getDate();}
+function fmtDT(iso){const d=new Date(iso);return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' · '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});}
+function lastN(n){const o=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);o.push(todayStr(d));}return o;}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+let entry={};ALL.forEach(i=>entry[i.key]=false);
+let selSrc='told';
+let pickFeel=null,pickWho=null,pickRepair=null,pickPresent=null;
+
+/* ---------- TABS ---------- */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    const t=tab.dataset.tab;document.getElementById('p-'+t).classList.add('active');
+    document.getElementById('hTitle').textContent={today:'Today',catch:'Gipsy',trends:'Trends',review:'Weekly Review'}[t];
+    if(t==='catch')loadCatch();if(t==='trends')loadTrends();if(t==='review')loadReview();
+  });
+});
+
+/* ---------- TODAY LISTS ---------- */
+function renderLists(){
+  ['gipsy','nico','rose'].forEach(g=>{
+    const el=document.getElementById('list-'+g);el.innerHTML='';
+    ITEMS[g].forEach(item=>{
+      const c=!!entry[item.key];const d=document.createElement('div');
+      d.className='item'+(c?' checked':'');
+      d.innerHTML=`<div class="box">${c?'✓':''}</div><div class="it"><div class="t">${item.t}</div><div class="s">${item.s}</div></div>`;
+      d.addEventListener('click',()=>{entry[item.key]=!entry[item.key];renderLists();});
+      el.appendChild(d);
+    });
+  });
+}
+async function loadToday(){
+  document.getElementById('hDate').textContent=fmtHeader();
+  try{const r=await window.storage.get(`entry:${todayStr()}`,false);if(r&&r.value){const p=JSON.parse(r.value);entry={...entry,...(p.items||{})};document.getElementById('slideNote').value=p.slideNote||'';document.getElementById('proudNote').value=p.proudNote||'';pickPresent=(typeof p.present==='number')?p.present:null;}}catch(e){}
+  renderLists();renderPresent();await refreshCriticCount();
+}
+async function saveToday(){
+  const p={items:{...entry},slideNote:document.getElementById('slideNote').value.trim(),proudNote:document.getElementById('proudNote').value.trim(),present:pickPresent,savedAt:new Date().toISOString()};
+  const s=document.getElementById('statusMsg');
+  try{const r=await window.storage.set(`entry:${todayStr()}`,JSON.stringify(p),false);s.textContent=r?'Saved ✓':'Could not save — try again.';if(r)await computeStreak();}catch(e){s.textContent='Could not save — try again.';}
+  setTimeout(()=>{s.textContent='';},2500);
+}
+document.getElementById('saveBtn').addEventListener('click',saveToday);
+async function computeStreak(){
+  let set=new Set();try{const r=await window.storage.list('entry:',false);if(r&&r.keys)r.keys.forEach(k=>set.add(k.replace('entry:','')));}catch(e){}
+  let n=0,c=new Date();if(!set.has(todayStr(c)))c.setDate(c.getDate()-1);
+  while(set.has(todayStr(c))){n++;c.setDate(c.getDate()-1);}
+  document.getElementById('streakNum').textContent=n;
+}
+
+/* ---------- CRITIC / FEELING FLOW ---------- */
+const flow=document.getElementById('criticFlow');
+function buildPills(){
+  const fp=document.getElementById('feelPills');fp.innerHTML='';
+  FEELINGS.forEach(f=>{const b=document.createElement('div');b.className='pill';b.textContent=f;
+    b.addEventListener('click',()=>{pickFeel=f;[...fp.children].forEach(c=>c.classList.remove('sel'));b.classList.add('sel');});fp.appendChild(b);});
+  const wp=document.getElementById('whoPills');wp.innerHTML='';
+  WHO.forEach(w=>{const b=document.createElement('div');b.className='pill';b.textContent=w;
+    b.addEventListener('click',()=>{pickWho=w;[...wp.children].forEach(c=>c.classList.remove('sel'));b.classList.add('sel');});wp.appendChild(b);});
+  const rp=document.getElementById('repairPills');rp.innerHTML='';
+  REPAIR.forEach(w=>{const b=document.createElement('div');b.className='pill';b.textContent=w;
+    b.addEventListener('click',()=>{pickRepair=w;[...rp.children].forEach(c=>c.classList.remove('sel'));b.classList.add('sel');});rp.appendChild(b);});
+}
+function renderPresent(){
+  const el=document.getElementById('presentRow');el.innerHTML='';
+  PRESENT.forEach((p,i)=>{const b=document.createElement('div');b.className='pbtn'+(pickPresent===i?' sel':'');b.textContent=p;
+    b.addEventListener('click',()=>{pickPresent=(pickPresent===i?null:i);renderPresent();});el.appendChild(b);});
+}
+document.getElementById('criticOpen').addEventListener('click',()=>{
+  pickFeel=null;pickWho=null;pickRepair=null;buildPills();document.getElementById('criticWhat').value='';
+  flow.classList.add('show');document.getElementById('criticOpen').style.display='none';
+});
+document.getElementById('criticCancel').addEventListener('click',closeFlow);
+function closeFlow(){flow.classList.remove('show');document.getElementById('criticOpen').style.display='';}
+document.getElementById('criticSave').addEventListener('click',async()=>{
+  const id=`critic:${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+  const payload={feeling:pickFeel||'',who:pickWho||'',what:document.getElementById('criticWhat').value.trim(),repair:pickRepair||'',at:new Date().toISOString()};
+  try{await window.storage.set(id,JSON.stringify(payload),false);}catch(e){}
+  closeFlow();await refreshCriticCount();
+});
+async function refreshCriticCount(){
+  const today=todayStr();let count=0;const unrepaired=[];
+  try{const r=await window.storage.list('critic:',false);if(r&&r.keys){for(const k of r.keys){try{const v=await window.storage.get(k,false);if(v&&v.value){const p=JSON.parse(v.value);if(todayStr(new Date(p.at))===today){count++;if(p.repair==='Not yet')unrepaired.push({id:k,...p});}}}catch(e){}}}}catch(e){}
+  document.getElementById('criticCount').textContent=count===0?'Nothing logged today.':`${count} caught today — that's awareness, not failure.`;
+  const uz=document.getElementById('unrepairedZone');uz.innerHTML='';
+  if(unrepaired.length){
+    let h=`<div class="unrepaired"><div class="uh">Still open — go repair these before bed</div>`;
+    unrepaired.forEach(u=>{h+=`<div class="urow" data-id="${u.id}"><div class="ut">${esc(u.what||'(no note)')}<br><span class="uw">${esc(u.who||'')}${u.feeling?' · felt '+esc(u.feeling.toLowerCase()):''}</span></div><button class="ufix">Repaired ✓</button></div>`;});
+    h+=`</div>`;uz.innerHTML=h;
+    uz.querySelectorAll('.urow').forEach(row=>{row.querySelector('.ufix').addEventListener('click',async()=>{
+      const id=row.dataset.id;try{const r=await window.storage.get(id,false);if(r&&r.value){const p=JSON.parse(r.value);p.repair='Yes, later';await window.storage.set(id,JSON.stringify(p),false);await refreshCriticCount();}}catch(e){}});});
+  }
+}
+
+/* ---------- CATCH LIST ---------- */
+function setSrc(s){selSrc=s;document.getElementById('srcTold').classList.toggle('active',s==='told');document.getElementById('srcNoticed').classList.toggle('active',s==='noticed');}
+document.getElementById('srcTold').addEventListener('click',()=>setSrc('told'));
+document.getElementById('srcNoticed').addEventListener('click',()=>setSrc('noticed'));
+document.getElementById('addCatchBtn').addEventListener('click',addCatch);
+async function saveWithRetry(id,obj,tries=3){
+  for(let i=0;i<tries;i++){
+    try{
+      await window.storage.set(id,JSON.stringify(obj),false);
+      // verify it actually landed
+      const check=await window.storage.get(id,false);
+      if(check&&check.value)return true;
+    }catch(e){}
+    await new Promise(r=>setTimeout(r,250*(i+1)));
+  }
+  return false;
+}
+async function addCatch(){
+  const el=document.getElementById('catchText');const text=el.value.trim();
+  const st=document.getElementById('catchStatus');const btn=document.getElementById('addCatchBtn');
+  if(!text){st.className='catch-status err';st.textContent='Type something first.';return;}
+  btn.disabled=true;st.className='catch-status';st.textContent='Saving…';
+  const id=`catch:${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+  const p={text,source:selSrc,status:'open',loggedAt:new Date().toISOString(),closedAt:null};
+  const ok=await saveWithRetry(id,p);
+  btn.disabled=false;
+  if(ok){
+    el.value='';setSrc('told');
+    st.className='catch-status ok';st.textContent='Caught ✓';
+    await loadCatch();
+    setTimeout(()=>{st.textContent='';st.className='catch-status';},2000);
+  }else{
+    // keep their text exactly where it is
+    st.className='catch-status err';st.textContent='Didn\'t save — your text is safe. Tap Catch it again.';
+  }
+}
+async function loadCatch(){
+  let keys=[];try{const r=await window.storage.list('catch:',false);if(r&&r.keys)keys=r.keys;}catch(e){}
+  const items=[];for(const k of keys){try{const r=await window.storage.get(k,false);if(r&&r.value)items.push({id:k,...JSON.parse(r.value)});}catch(e){}}
+  items.sort((a,b)=>new Date(b.loggedAt)-new Date(a.loggedAt));
+  const open=items.filter(i=>i.status==='open'),closed=items.filter(i=>i.status==='done');
+  document.getElementById('cstats').innerHTML=`<span><b>${open.length}</b> open</span><span><b>${closed.length}</b> closed total</span>`;
+  const ol=document.getElementById('openList');ol.innerHTML='';
+  if(!open.length)ol.innerHTML='<div class="empty">Nothing open. When Gipsy mentions something — a plan, a worry, a want — catch it here before it slips.</div>';
+  open.forEach(it=>{const row=document.createElement('div');row.className='citem';
+    row.innerHTML=`<button class="cdone">✓</button><div><div class="ctext">${esc(it.text)}</div><div class="ctag">${it.source==='told'?'She said it':'I noticed it'} · ${fmtDT(it.loggedAt)}</div></div>`;
+    row.querySelector('.cdone').addEventListener('click',()=>closeCatch(it.id));ol.appendChild(row);});
+  const cl=document.getElementById('closedList');cl.innerHTML='';
+  if(!closed.length)cl.innerHTML='<div class="empty">Nothing closed yet.</div>';
+  closed.slice(0,25).forEach(it=>{const row=document.createElement('div');row.className='citem done';
+    row.innerHTML=`<div class="cdone">✓</div><div><div class="ctext">${esc(it.text)}</div><div class="ctag">${it.source==='told'?'She said it':'I noticed it'} · closed ${fmtDT(it.closedAt)}</div></div>`;cl.appendChild(row);});
+}
+async function closeCatch(id){try{const r=await window.storage.get(id,false);if(r&&r.value){const p=JSON.parse(r.value);p.status='done';p.closedAt=new Date().toISOString();await window.storage.set(id,JSON.stringify(p),false);loadCatch();}}catch(e){}}
+document.getElementById('closedToggle').addEventListener('click',()=>{const el=document.getElementById('closedList');const sh=el.style.display!=='none';el.style.display=sh?'none':'block';document.getElementById('closedToggle').textContent=sh?'Show closed ▾':'Hide closed ▴';});
+
+/* ---------- DATA HELPERS ---------- */
+async function getEntries(dates){const out={};for(const d of dates){try{const r=await window.storage.get(`entry:${d}`,false);out[d]=(r&&r.value)?JSON.parse(r.value):null;}catch(e){out[d]=null;}}return out;}
+async function getCritics(){let keys=[],list=[];try{const r=await window.storage.list('critic:',false);if(r&&r.keys)keys=r.keys;}catch(e){}for(const k of keys){try{const r=await window.storage.get(k,false);if(r&&r.value)list.push(JSON.parse(r.value));}catch(e){}}return list;}
+const METRICS=[{id:'warmth',label:'Warmth & connection'},{id:'initiative',label:'Initiative & ownership'},{id:'special',label:'Special Time with kids'},{id:'coach',label:'Emotion coaching'}];
+function metricKeys(m){return ALL.filter(i=>i.metric===m).map(i=>i.key);}
+
+/* ---------- TRENDS ---------- */
+async function loadTrends(){
+  const dates=lastN(14);const entries=await getEntries(dates);const critics=await getCritics();
+  const recent=dates.slice(7),prior=dates.slice(0,7);
+  function mpct(mid,days){const keys=metricKeys(mid);let h=0,p=0;days.forEach(d=>{const e=entries[d];if(e&&e.items)keys.forEach(k=>{p++;if(e.items[k])h++;});});return p?Math.round(h/p*100):null;}
+  const critByDay={};dates.forEach(d=>critByDay[d]=0);critics.forEach(c=>{const d=todayStr(new Date(c.at));if(d in critByDay)critByDay[d]++;});
+  const rC=recent.reduce((a,d)=>a+critByDay[d],0),pC=prior.reduce((a,d)=>a+critByDay[d],0);
+  const az=document.getElementById('alertZone');az.innerHTML='';const logged=dates.filter(d=>entries[d]).length;
+  if(logged>=3){
+    const wr=mpct('warmth',recent),wp=mpct('warmth',prior);
+    if(wr!==null&&wp!==null&&wr<wp-15)az.innerHTML+=`<div class="alert"><b>Heads up:</b> warmth dropped from ${wp}% to ${wr}% this week. This is the metric tied most directly to how Gipsy and the kids actually feel. Worth asking why — before they feel it too.</div>`;
+    if(rC>pC&&rC>=3)az.innerHTML+=`<div class="alert"><b>Pattern forming:</b> ${rC} critical moments this week, up from ${pC}. Open Review — the feelings underneath are where this gets solved.</div>`;
+    if(!az.innerHTML)az.innerHTML=`<div class="good"><b>Holding steady.</b> No slides flagged this week. Consistency is the whole game.</div>`;
+  } else az.innerHTML=`<div class="good">Log a few days and this fills in. Trends need data before they can warn you of anything.</div>`;
+  const tc=document.getElementById('trendCards');tc.innerHTML='';
+  METRICS.forEach(m=>{
+    const r=mpct(m.id,recent),p=mpct(m.id,prior);let cls='flat',delta='—';
+    if(r!==null&&p!==null){const d=r-p;if(d>=8){cls='up';delta=`▲ +${d}%`;}else if(d<=-8){cls='down';delta=`▼ ${d}%`;}else{delta='steady';}}
+    else if(r!==null)delta=`${r}%`;
+    const keys=metricKeys(m.id);let bars='';dates.forEach(d=>{const e=entries[d];let v=0;if(e&&e.items){let h=0;keys.forEach(k=>{if(e.items[k])h++;});v=keys.length?h/keys.length:0;}bars+=`<div class="bar" style="height:${Math.max(3,Math.round(v*42))}px"></div>`;});
+    const c=document.createElement('div');c.className='trend-card';c.innerHTML=`<div class="th"><span class="tname">${m.label}</span><span class="tdelta ${cls}">${delta}</span></div><div class="spark">${bars}</div>`;tc.appendChild(c);
+  });
+  let cb='';dates.forEach(d=>{cb+=`<div class="bar crit" style="height:${Math.max(3,Math.min(42,critByDay[d]*13))}px"></div>`;});
+  let cc='flat',cd=`${rC} this week`;if(rC<pC){cc='up';cd=`▼ fewer · ${rC} vs ${pC}`;}else if(rC>pC){cc='down';cd=`▲ more · ${rC} vs ${pC}`;}
+  const card=document.createElement('div');card.className='trend-card';card.innerHTML=`<div class="th"><span class="tname">Critical moments (caught)</span><span class="tdelta ${cc}">${cd}</span></div><div class="spark">${cb}</div>`;tc.appendChild(card);
+}
+
+/* ---------- REVIEW ---------- */
+async function loadReview(){
+  const dates=lastN(7);const entries=await getEntries(dates);const critics=await getCritics();
+  const ws=new Date(dates[0]+'T00:00:00');const wc=critics.filter(c=>new Date(c.at)>=ws);
+  function pct(mid){const keys=metricKeys(mid);let h=0,p=0;dates.forEach(d=>{const e=entries[d];if(e&&e.items)keys.forEach(k=>{p++;if(e.items[k])h++;});});return p?Math.round(h/p*100):null;}
+  const logged=dates.filter(d=>entries[d]).length;
+  let keys=[];try{const r=await window.storage.list('catch:',false);if(r&&r.keys)keys=r.keys;}catch(e){}
+  let told=0,noticed=0,closed=0,total=0;
+  for(const k of keys){try{const r=await window.storage.get(k,false);if(!r||!r.value)continue;const it=JSON.parse(r.value);if(new Date(it.loggedAt)>=ws){total++;if(it.source==='told')told++;else noticed++;if(it.status==='done')closed++;}}catch(e){}}
+  const noticedPct=total?Math.round(noticed/total*100):null;
+  const slides=[];dates.slice().reverse().forEach(d=>{const e=entries[d];if(e&&e.slideNote)slides.push({d,note:e.slideNote});});
+  const prouds=[];dates.slice().reverse().forEach(d=>{const e=entries[d];if(e&&e.proudNote)prouds.push({d,note:e.proudNote});});
+  let repYes=0,repNo=0;wc.forEach(c=>{if(c.repair==='Yes, already'||c.repair==='Yes, later')repYes++;else if(c.repair==='Not yet')repNo++;});
+  const warm=pct('warmth'),special=pct('special'),init=pct('initiative'),coach=pct('coach');
+  const body=document.getElementById('reviewBody');
+  if(logged===0){body.innerHTML=`<div class="rev-step"><div class="rq">No data yet this week.</div><div class="rdata">Log a few days on Today, then come back. The review reads your week back to you and walks you through what to do about it.</div></div>`;return;}
+  let html='';
+  html+=`<div class="rev-step"><div class="rnum">Step 1 · The mirror</div><div class="rq">Your week, no spin.</div><div class="rdata">Logged <b>${logged}/7</b> days.<br>Warmth & connection: <b>${warm===null?'—':warm+'%'}</b><br>Special Time: <b>${special===null?'—':special+'%'}</b><br>Initiative & ownership: <b>${init===null?'—':init+'%'}</b><br>Emotion coaching: <b>${coach===null?'—':coach+'%'}</b><br>Critical moments caught: <b>${wc.length}</b><br>Gipsy's Catch List: <b>${total}</b> caught, <b>${closed}</b> closed${noticedPct!==null?`, <b>${noticedPct}%</b> self-noticed`:''}.</div></div>`;
+  const pairs=[['Warmth',warm],['Special Time',special],['Initiative',init],['Emotion coaching',coach]].filter(p=>p[1]!==null);
+  let weak=null;pairs.forEach(p=>{if(!weak||p[1]<weak[1])weak=p;});
+  html+=`<div class="rev-step"><div class="rnum">Step 2 · The weak point</div><div class="rq">${weak?`Lowest this week: <span style="color:var(--clay)">${weak[0].toLowerCase()}</span>, at ${weak[1]}%.`:'Not enough to rank yet.'}</div><div class="rdata">Don't fix everything. Pick this one. Smallest thing you could do tomorrow to move it?</div><textarea id="rev_weak" placeholder="One concrete thing for tomorrow..."></textarea></div>`;
+  // feelings underneath
+  let ub='';
+  if(wc.length){
+    const feelCount={};wc.forEach(c=>{if(c.feeling)feelCount[c.feeling]=(feelCount[c.feeling]||0)+1;});
+    const top=Object.entries(feelCount).sort((a,b)=>b[1]-a[1]);
+    if(top.length){ub=`The feeling under your anger most this week was <b>${esc(top[0][0].toLowerCase())}</b>${top[0][1]>1?` (${top[0][1]}×)`:''}.`;if(top[1])ub+=` Then ${esc(top[1][0].toLowerCase())}.`;}
+    else ub='You logged the moments but not the feeling underneath. Next time, pick the real one — that\'s where this gets solved.';
+  } else ub='No critical moments logged this week. Either a genuinely steady week, or some happened and slipped past uncaught. Be honest about which.';
+  let repairLine='';
+  if(wc.length){repairLine=`<br><br>Of ${wc.length} hard moment${wc.length>1?'s':''}, you repaired <b>${repYes}</b>`;if(repNo)repairLine+=`, and <b>${repNo}</b> went unrepaired`;repairLine+='. The repair matters more than the slip.';}
+  html+=`<div class="rev-step"><div class="rnum">Step 3 · Underneath the anger</div><div class="rq">What was really there.</div><div class="rdata">${ub}${repairLine}</div><textarea id="rev_under" placeholder="When that feeling shows up — is it the old question, 'why am I not worth listening to?' What would actually help in the moment?"></textarea></div>`;
+  let sb=slides.length?slides.map(s=>`• <b>${fmtShort(s.d)}:</b> ${esc(s.note)}`).join('<br>'):'Nothing logged on the honest line this week.';
+  html+=`<div class="rev-step"><div class="rnum">Step 4 · What slid</div><div class="rq">The things you let pass.</div><div class="rdata">${sb}</div><textarea id="rev_slid" placeholder="Any theme? What does it cost when these slide?"></textarea></div>`;
+  let pb=prouds.length?prouds.map(s=>`• <b>${fmtShort(s.d)}:</b> ${esc(s.note)}`).join('<br>'):'Nothing logged here this week — try filling the "one thing I did right" line daily. It matters more than it looks.';
+  html+=`<div class="rev-step"><div class="rnum">Step 5 · What went right</div><div class="rq">Don't skip this one.</div><div class="rdata">${pb}</div><textarea id="rev_proud" placeholder="Read those back. What do they tell you about the kind of father and husband you actually are when you show up?"></textarea></div>`;
+  html+=`<div class="rev-step"><div class="rnum">Step 6 · Carry it forward</div><div class="rq">One line to take to a real person.</div><div class="rdata">This work lands when you say it out loud. Write the one thing worth bringing to your next session — or saying to Gipsy directly.</div><textarea id="rev_forward" placeholder="The one thing to bring forward this week..."></textarea></div>`;
+  html+=`<button class="save" id="saveReviewBtn">Save this review</button><div class="status" id="reviewStatus"></div><div class="mini">Saved reviews build a record. Progress here is slow and non-linear — the record is how you see it at all.</div>`;
+  body.innerHTML=html;
+  const rkey=`review:${dates[0]}`;
+  try{const r=await window.storage.get(rkey,false);if(r&&r.value){const p=JSON.parse(r.value);['weak','under','slid','proud','forward'].forEach(f=>{const el=document.getElementById('rev_'+f);if(el&&p[f])el.value=p[f];});}}catch(e){}
+  document.getElementById('saveReviewBtn').addEventListener('click',async()=>{
+    const p={weak:gv('rev_weak'),under:gv('rev_under'),slid:gv('rev_slid'),proud:gv('rev_proud'),forward:gv('rev_forward'),savedAt:new Date().toISOString()};
+    const s=document.getElementById('reviewStatus');
+    try{const r=await window.storage.set(rkey,JSON.stringify(p),false);s.textContent=r?'Review saved ✓':'Could not save.';}catch(e){s.textContent='Could not save.';}
+    setTimeout(()=>{s.textContent='';},2500);
+  });
+}
+function gv(id){const el=document.getElementById(id);return el?el.value.trim():'';}
+
+
+/* ---------- SETTINGS: backup + reminder ---------- */
+document.getElementById('setToggle').addEventListener('click',()=>{
+  const b=document.getElementById('setBody');const sh=b.style.display!=='none';
+  b.style.display=sh?'none':'block';
+  document.getElementById('setToggle').textContent=sh?'Settings & backup ▾':'Settings & backup ▴';
+});
+
+// Export everything under logbook:
+document.getElementById('exportBtn').addEventListener('click',()=>{
+  const data={};
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('logbook:'))data[k]=localStorage.getItem(k);}
+  const blob=new Blob([JSON.stringify({_app:'the-logbook',_v:1,exportedAt:new Date().toISOString(),data},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=`logbook-backup-${todayStr()}.json`;document.body.appendChild(a);a.click();a.remove();
+  URL.revokeObjectURL(url);
+});
+// Import
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change',(e)=>{
+  const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const parsed=JSON.parse(r.result);const d=parsed.data||parsed;let n=0;
+    Object.keys(d).forEach(k=>{if(k.startsWith('logbook:')){localStorage.setItem(k,d[k]);n++;}});
+    alert(`Restored ${n} entries. Reloading.`);location.reload();
+  }catch(err){alert('Could not read that file.');}};
+  r.readAsText(f);
+});
+
+/* ---------- REMINDER ---------- */
+async function refreshRemUI(){
+  const enabled=localStorage.getItem('logbook:remEnabled')==='1';
+  const t=localStorage.getItem('logbook:remTime')||'20:00';
+  document.getElementById('remTime').value=t;
+  const btn=document.getElementById('remEnable');
+  if(enabled&&Notification.permission==='granted'){btn.textContent='On';btn.classList.add('on');}
+  else{btn.textContent='Turn on';btn.classList.remove('on');}
+}
+document.getElementById('remEnable').addEventListener('click',async()=>{
+  const t=document.getElementById('remTime').value||'20:00';
+  localStorage.setItem('logbook:remTime',t);
+  if(!('Notification' in window)){document.getElementById('remNote').textContent='This device doesn\'t support in-app notifications. Use a phone reminder instead.';return;}
+  let perm=Notification.permission;
+  if(perm!=='granted')perm=await Notification.requestPermission();
+  if(perm==='granted'){localStorage.setItem('logbook:remEnabled','1');refreshRemUI();
+    document.getElementById('remNote').textContent='Reminder on for '+t+'. You\'ll get a nudge when you open or return to the app after that time, if you haven\'t logged. For a guaranteed daily ping even when closed, keep the phone reminder we set.';
+  } else {localStorage.setItem('logbook:remEnabled','0');refreshRemUI();
+    document.getElementById('remNote').textContent='Notifications are blocked. Turn them on for this app in your phone settings, or rely on the phone reminder.';}
+});
+// check on load + when app regains focus
+async function maybeNotify(){
+  if(localStorage.getItem('logbook:remEnabled')!=='1')return;
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const t=localStorage.getItem('logbook:remTime')||'20:00';
+  const [hh,mm]=t.split(':').map(Number);
+  const now=new Date();
+  const after = now.getHours()>hh || (now.getHours()===hh && now.getMinutes()>=mm);
+  if(!after)return;
+  // already logged today?
+  let logged=false;try{const r=await window.storage.get('entry:'+todayStr(),false);if(r&&r.value)logged=true;}catch(e){}
+  if(logged)return;
+  // only once per day
+  if(localStorage.getItem('logbook:lastNotify')===todayStr())return;
+  localStorage.setItem('logbook:lastNotify',todayStr());
+  try{new Notification('The Logbook',{body:'You haven\'t logged today. Two minutes — how did you show up for Gipsy and the kids?',icon:'icon-192.png'});}catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)maybeNotify();});
+
+/* ---------- SERVICE WORKER ---------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('service-worker.js').catch(()=>{});});
+}
+
+/* ---------- INIT ---------- */
+(async function(){await loadToday();await computeStreak();await refreshRemUI();await maybeNotify();})();
+</script>
+</body>
+</html>
